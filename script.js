@@ -1,9 +1,11 @@
+/* <<==== FIELDS TO JS VARIABLES ====>> */
 const RAID_MESSAGE = "{{messageTemplateText}}";
 const RAID_SFX_URL = "{{sfxUrl}}";
 const RAID_VIEWER_COUNT_MISSING = "{{messageViewerCountMissing}}";
 const SHOW_ON_PLATFORM = "{{showOnPlatform}}";
 const RAID_DISPLAY_DELAY = parseInt("{{contentDisplayDelay}}", 10);
 const RAID_DISPLAY_DURATION = parseInt("{{duration}}", 10);
+/* <<== END FIELDS TO JS VARIABLES ==>> */
 
 /* ================================================================================================================== */
 
