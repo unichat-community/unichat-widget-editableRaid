@@ -10,12 +10,12 @@ env:
 
 jobs:
   package:
-    runs-on: ubuntu-24.04
+    runs-on: codeberg-tiny
     permissions:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
 
       - name: Install yq
         run: |
@@ -30,11 +30,11 @@ jobs:
           mkdir -p "$HOME/.local/bin"
           wget "https://github.com/mikefarah/yq/releases/download/${{ env.YQ_VERSION }}/yq_linux_${ARCH}" -O "$HOME/.local/bin/yq"
           chmod +x "$HOME/.local/bin/yq"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/bin" >> "$FORGEJO_PATH"
 
       - name: Check manifest version
         run: |
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          TAG_NAME="${FORGEJO_REF#refs/tags/}"
           MANIFEST_VERSION=$(yq e '.version' manifest.yaml)
           if [ "$MANIFEST_VERSION" != "$TAG_NAME" ]; then
             echo "Manifest version ($MANIFEST_VERSION) does not match tag name ($TAG_NAME)."
@@ -63,20 +63,11 @@ jobs:
           ZIP_FILE="${WIDGET_NAME}-${WIDGET_VERSION}.zip"
           echo "Creating ZIP archive: $ZIP_FILE"
           cd dist && zip -r "$ZIP_FILE" "${WIDGET_NAME}" -x "**/fieldstate.json"
+          rm -rf "dist/${WIDGET_NAME}"
 
-      - name: Create GitHub Release
-        run: |
-          WIDGET_NAME="$(yq e '.name' manifest.yaml)"
-          WIDGET_VERSION="$(yq e '.version' manifest.yaml)"
-          ZIP_FILE="${WIDGET_NAME}-${WIDGET_VERSION}.zip"
-          if [ -n "$(command -v gh)" ]; then
-            echo "Creating GitHub Release for tag $WIDGET_VERSION"
-            echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-            gh release create "$WIDGET_VERSION" --prerelease
-            echo "Uploading $ZIP_FILE to GitHub Release"
-            gh release upload "$WIDGET_VERSION" "dist/$ZIP_FILE" --clobber
-            echo "All files uploaded to GitHub Release successfully."
-          else
-            echo "GitHub CLI is not installed. Skipping upload to GitHub Release."
-            exit 1
-          fi
+      - name: Create and upload to Forgejo Release
+        uses: actions/forgejo-release@v2.11.3
+        with:
+          direction: upload
+          prerelease: true
+          release-dir: ${{ forgejo.workspace }}/dist
